@@ -86,11 +86,14 @@
 
 ```
 
-### Sonarqube setup
+### SonarQube Setup
 
 We are using SonarCloud, the online SaaS version of SonarQube, to perform static code analysis.  
 All code is analyzed in the cloud, and results are accessible through the SonarCloud dashboard.  
-This eliminates the need for local SonarQube server setup and simplifies integration with GitHub Actions.
+This eliminates the need for a local SonarQube server setup and simplifies integration with GitHub Actions.
+
+We have configured the sonar properties in config file sonar-project.properties
+
 ---
 
 ## Summary
