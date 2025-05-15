@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
@@ -42,7 +43,6 @@ jobs:
         run: |
           curl -u "${SONAR_TOKEN}:" "https://sonarcloud.io/api/issues/search?componentKeys=devops10x_springboot" -o sonarqube-report.json
 
-
       - name: Upload SonarQube report artifact
         uses: actions/upload-artifact@v4
         with:
@@ -54,3 +54,39 @@ jobs:
         with:
           name: jacoco-report
           path: tests/target/site/jacoco-aggregate/
+
+      - name: Wait for SonarCloud Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          SONAR_PROJECT_KEY="devops10x_springboot"
+          SONAR_ORG="devops10x"
+          SONAR_HOST="https://sonarcloud.io"
+          # Get the analysis task id from the report-task.txt file
+          REPORT_TASK_FILE=$(find . -name report-task.txt | head -n 1)
+          if [ ! -f "$REPORT_TASK_FILE" ]; then
+            echo "report-task.txt not found!"
+            exit 1
+          fi
+          CE_TASK_ID=$(grep ceTaskId "$REPORT_TASK_FILE" | cut -d'=' -f2)
+          # Poll SonarCloud for Quality Gate status
+          for i in {1..30}; do
+            STATUS=$(curl -s -u "${SONAR_TOKEN}:" "$SONAR_HOST/api/ce/task?id=$CE_TASK_ID" | jq -r .task.status)
+            if [ "$STATUS" = "SUCCESS" ]; then
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "SonarCloud analysis failed."
+              exit 1
+            else
+              echo "Waiting for SonarCloud analysis... ($i/30)"
+              sleep 10
+            fi
+          done
+          # Check Quality Gate status
+          ANALYSIS_ID=$(curl -s -u "${SONAR_TOKEN}:" "$SONAR_HOST/api/ce/task?id=$CE_TASK_ID" | jq -r .task.analysisId)
+          QG_STATUS=$(curl -s -u "${SONAR_TOKEN}:" "$SONAR_HOST/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" | jq -r .projectStatus.status)
+          echo "Quality Gate Status: $QG_STATUS"
+          if [ "$QG_STATUS" != "OK" ]; then
+            echo "Quality Gate failed!"
+            exit 1
+          fi
