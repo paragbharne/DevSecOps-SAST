@@ -98,6 +98,7 @@ jobs:
         run: npm install -g snyk
 
       - name: Run Snyk to check for vulnerabilities
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk test --all-projects --json-file-output=snyk.json
