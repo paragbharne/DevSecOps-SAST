@@ -1,95 +1,78 @@
-# Multi-module Maven Example
+# multiroom-chat-goof
+A purposely vulnerable, multiroom chat application with Java, Spring, WebSocket on the backend and 
+Vue, Vuex, Nuxt.js on the frontend.
 
-This project imports JaCoCo's aggregate XML report to be able to report coverage across modules as well as unit test coverage inside the module.
+## Overview
 
-For a basic example, see [basic maven project](../maven-basic/README.md).
+This project is based off the excellent work of [kojotdev](http://kojotdev.com). Read more about it 
+[here](http://kojotdev.com/2019/09/multiroom-chat-with-spring-websocket-nuxt-vue-vuex/).
 
-## Usage
-* Build the project, execute all the tests and analyze the project with SonarScanner for Maven:
-```shell
-mvn clean verify sonar:sonar
+The project is organized in such a way that it can easily be run locally and be deployed for demonstration.
+
+**NOTE:** The project has known vulnerabilities in it for demonstration purposes. PLEASE do not attempt to use
+in any production environment.
+
+![multiroom-chatspring-vue-websocket-live-example](http://kojotdev.com/wp-content/uploads/2019/09/multiroom-chat-live.gif)
+
+## Run - local, separated
+
+Launch the backend with:
+
+```
+mvn clean install
+mvn spring-boot:run
 ```
 
-## Description
+The backend will launch on port `8080`
 
-This project consists of 3 modules.
+Launch the frontend with:
 
-* [`module1`](module1/pom.xml) and [`module2`](module2/pom.xml) contain "business logic" and related unit tests.
-
-* [`tests`](tests/pom.xml) module contains integration tests which test functionality using both modules.
- `tests` module is also the one which creates the aggregate coverage report imported into SonarQube.
-
-To generate the report we configure the JaCoCo plugin to attach its agent to the JVM which is executing the tests in the top level [pom](pom.xml). 
-
-This configuration is done in the `<pluginManagment>` section, so it will be applied on every submodule.
-
-It is also configured inside the `coverage` profile, so this can be activated as needed (e.g. only in CI pipeline).
-
-```xml
-<build>
-  <pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </pluginManagement>
-</build>
+```
+cd src/frontend
+npm install
+npm run dev
 ```
 
-Once we have configured JaCoCo to collect coverage data, we need to generate the XML coverage report to be imported into SonarQube.
+The frontend will launch on port `3000`
 
-We will use [report-aggregate](https://www.jacoco.org/jacoco/trunk/doc/report-aggregate-mojo.html) goal which collects data from all modules dependent on the `tests` module.
+You can then browse to: `http://localhost:3000`
 
-To achieve this we configure the JaCoCo plugin by configuring execution of `report-aggregate` goal in `verify` phase.
+Any changes you make to the frontend will trigger an automatic re-build of the frontend.
 
-See [pom.xml](tests/pom.xml)
+## Run - local, unified
 
-```xml
-<build>
-  <plugins>
-    <plugin>
-      <groupId>org.jacoco</groupId>
-      <artifactId>jacoco-maven-plugin</artifactId>
-      <executions>
-        <execution>
-          <id>report</id>
-          <goals>
-            <goal>report-aggregate</goal>
-          </goals>
-          <phase>verify</phase>
-        </execution>
-      </executions>
-    </plugin>
-  </plugins>
-</build>
+When you run `mvn clean install`, in addition to building the Java code, it performs the following for the frontend
+app:
+
+* builds the nuxt app
+* generates a static version of the nuxt app
+* copies the static frontend into `src/main/resources/public`
+
+The last step is what enables the frontend app to be served by the spring boot app.
+
+You can run the spring boot app as before:
+
+```
+mvn spring-boot:run
 ```
 
-This will create a report in `tests/target/site/jacoco-aggregate/jacoco.xml`. To import this report we will set
-`sonar.coverage.jacoco.xmlReportPaths` property with the `${maven.multiModuleProjectDirectory}` so every module knows where the coverage should be imported from
+Now, you can access the frontend at: `http://localhost:8080` and it will automatically connect with backend.
 
-```xml
-<properties>
-  <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/tests/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-</properties>
+## Run - remote, unified
+
+The combination of the `Procfile` and `system.properties` files makes the app easily deployable to
+[Heroku](https://www.heroku.com/).
+
+**NOTE**: In order for the frontend to properly connect to the backend, you'll need to set an environment variable
+called: `BASE_URL`.
+
+Do the following to deploy to heroku using the cli too:
+
+```
+heroku apps:create my-great-app
+heroku config:set BASE_URL=https://my-great-app.herokuapp.com
+git push heroku main
 ```
 
-Alternately we can set this property on the command line with the `-D` switch:
-
-```shell
-mvn -Dsonar.coverage.jacoco.xmlReportPaths=C:\projects\sonar-scanning-examples\sonarscanner-maven-aggregate\tests\target\site\jacoco-aggregate\jacoco.xml clean verify sonar:sonar 
-```
-
-We have to use an absolute path, because the report will be imported for each module separately and the path is resolved relative to the module dir.
-
-## Documentation
-
-[SonarScanner for Maven](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/)
+This will push the code to heroku and run the unified build process. Once complete, you can access the app at the name
+you gave it (ex: https://my-great-app.herokuapp.com)
