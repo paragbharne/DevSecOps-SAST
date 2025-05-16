@@ -99,8 +99,26 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk test --all-projects --json-file-output=snyk.json
 
-      - name: Upload JaCoCo coverage report
+      - name: Install snyk-to-html
+        run: npm install -g snyk-to-html
+
+      - name: Convert Snyk JSON to HTML
+        run: snyk-to-html -i snyk.json -o snyk-report.html
+        
+      - name: Upload Snyk HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-html-report
+          path: snyk-report.html
+
+      - name: Upload synch report
         uses: actions/upload-artifact@v4
         with:
           name: snyk-report
           path: snyk.json
+
+      - name: Upload JaCoCo HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: target/site/jacoco/
