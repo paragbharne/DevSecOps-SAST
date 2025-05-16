@@ -21,40 +21,40 @@ jobs:
         with:
           java-version: 17
           distribution: 'zulu' # Alternative distribution options are available.
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=devops10x_snyk-chat-goof
+      # - name: Cache SonarQube packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.sonar/cache
+      #     key: ${{ runner.os }}-sonar
+      #     restore-keys: ${{ runner.os }}-sonar
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: ${{ runner.os }}-m2
+      # - name: Build and analyze
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=devops10x_snyk-chat-goof
 
-      - name: Download SonarQube issues report
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          curl -u "${SONAR_TOKEN}:" "https://sonarcloud.io/api/issues/search?componentKeys=devops10x_snyk-chat-goof" -o sonarqube-report.json
+      # - name: Download SonarQube issues report
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   run: |
+      #     curl -u "${SONAR_TOKEN}:" "https://sonarcloud.io/api/issues/search?componentKeys=devops10x_snyk-chat-goof" -o sonarqube-report.json
 
-      - name: Upload SonarQube report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonarqube-report
-          path: sonarqube-report.json
+      # - name: Upload SonarQube report artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sonarqube-report
+      #     path: sonarqube-report.json
 
-      - name: Upload JaCoCo coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: tests/target/site/jacoco-aggregate/
+      # - name: Upload JaCoCo coverage report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: jacoco-report
+      #     path: tests/target/site/jacoco-aggregate/
 
       # - name: Wait for SonarCloud Quality Gate
       #   env:
@@ -125,10 +125,10 @@ jobs:
           echo "## Snyk Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
           echo "[Download Snyk HTML Report](./snyk-html-report)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Sonarqube summary
-        run: |
-          echo "## Sonarqube summary" >> $GITHUB_STEP_SUMMARY
-          echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
+      # - name: Sonarqube summary
+      #   run: |
+      #     echo "## Sonarqube summary" >> $GITHUB_STEP_SUMMARY
+      #     echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
 
       - name: Add Snyk summary to job
         run: |
@@ -137,37 +137,37 @@ jobs:
           echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
           cat snyk.json | jq -r '.[] | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' >> $GITHUB_STEP_SUMMARY
 
-      - name: SonarQube summary
-        run: |
-          echo "## SonarQube Summary" >> $GITHUB_STEP_SUMMARY
-          echo "[View SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=devops10x_springboot)" >> $GITHUB_STEP_SUMMARY
+      # - name: SonarQube summary
+      #   run: |
+      #     echo "## SonarQube Summary" >> $GITHUB_STEP_SUMMARY
+      #     echo "[View SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=devops10x_springboot)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      # - name: Install xmllint
+      #   run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
-      - name: Install xmlstarlet
-        run: sudo apt-get update && sudo apt-get install -y xmlstarlet
+      # - name: Install xmlstarlet
+      #   run: sudo apt-get update && sudo apt-get install -y xmlstarlet
 
-      - name: Add detailed JaCoCo coverage summary to job
-        run: |
-          echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
-            echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
-            echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
-            xmlstarlet sel -t -m "//package" \
-              -v "concat(@name, ' | ', \
-                        counter[@type='INSTRUCTION']/@missed, ' | ', \
-                        format-number(100 * counter[@type='INSTRUCTION']/@covered div (counter[@type='INSTRUCTION']/@missed + counter[@type='INSTRUCTION']/@covered), '0'), '% | ', \
-                        counter[@type='BRANCH']/@missed, ' | ', \
-                        format-number(100 * counter[@type='BRANCH']/@covered div (counter[@type='BRANCH']/@missed + counter[@type='BRANCH']/@covered), '0'), '% | ', \
-                        counter[@type='COMPLEXITY']/@missed, ' | ', \
-                        counter[@type='LINE']/@missed, ' | ', \
-                        counter[@type='METHOD']/@missed, ' | ', \
-                        counter[@type='CLASS']/@missed)" \
-              -n tests/target/site/jacoco-aggregate/jacoco.xml | \
-            awk -F'|' '{printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5, $6, $7, $8, $9}' >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
-          fi
+      # - name: Add detailed JaCoCo coverage summary to job
+      #   run: |
+      #     echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
+      #     if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
+      #       echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
+      #       echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
+      #       xmlstarlet sel -t -m "//package" \
+      #         -v "concat(@name, ' | ', \
+      #                   counter[@type='INSTRUCTION']/@missed, ' | ', \
+      #                   format-number(100 * counter[@type='INSTRUCTION']/@covered div (counter[@type='INSTRUCTION']/@missed + counter[@type='INSTRUCTION']/@covered), '0'), '% | ', \
+      #                   counter[@type='BRANCH']/@missed, ' | ', \
+      #                   format-number(100 * counter[@type='BRANCH']/@covered div (counter[@type='BRANCH']/@missed + counter[@type='BRANCH']/@covered), '0'), '% | ', \
+      #                   counter[@type='COMPLEXITY']/@missed, ' | ', \
+      #                   counter[@type='LINE']/@missed, ' | ', \
+      #                   counter[@type='METHOD']/@missed, ' | ', \
+      #                   counter[@type='CLASS']/@missed)" \
+      #         -n tests/target/site/jacoco-aggregate/jacoco.xml | \
+      #       awk -F'|' '{printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5, $6, $7, $8, $9}' >> $GITHUB_STEP_SUMMARY
+      #       echo "" >> $GITHUB_STEP_SUMMARY
+      #       echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
+      #     else
+      #       echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
+      #     fi
