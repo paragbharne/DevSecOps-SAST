@@ -121,6 +121,20 @@ jobs:
           name: snyk-report
           path: snyk.json
 
+      - name: Build Docker image
+        run: docker build -t my-image:latest .
+
+      - name: Snyk scan Docker image (JSON output)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container test my-image:latest --file=Dockerfile --json > snyk-docker.json
+
+      - name: Upload Snyk Docker JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-docker-report
+          path: snyk-docker.json
+
       - name: Monitor Snyk project (upload to Snyk portal)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -142,6 +156,19 @@ jobs:
           echo "| Project | Vulnerabilities |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
           cat snyk.json | jq -r '.[] | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' >> $GITHUB_STEP_SUMMARY
+
+      - name: Add Snyk Docker scan summary to job
+        run: |
+          echo "## Snyk Docker Image Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '
+            .vulnerabilities // [] | group_by(.severity) | 
+            map({severity: .[0].severity, count: length}) | 
+            .[] | "| \(.severity | ascii_upcase) | \(.count) |"
+          ' snyk-docker.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[Download full Snyk Docker JSON report](./snyk-docker-report)" >> $GITHUB_STEP_SUMMARY
 
       # - name: SonarQube summary
       #   run: |
