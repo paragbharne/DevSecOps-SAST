@@ -133,3 +133,26 @@ jobs:
           echo "| Project | Vulnerabilities |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
           cat snyk.json | jq -r '.[] | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' >> $GITHUB_STEP_SUMMARY
+
+      - name: Add JaCoCo coverage summary to job
+        run: |
+          echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
+            COVERED=$(xmllint --xpath "string(//report/counter[@type='INSTRUCTION']/@covered)" tests/target/site/jacoco-aggregate/jacoco.xml)
+            MISSED=$(xmllint --xpath "string(//report/counter[@type='INSTRUCTION']/@missed)" tests/target/site/jacoco-aggregate/jacoco.xml)
+            TOTAL=$((COVERED + MISSED))
+            if [ "$TOTAL" -gt 0 ]; then
+              PERCENT=$(awk "BEGIN {printf \"%.2f\", 100 * $COVERED / $TOTAL}")
+              echo "| Metric      | Value |" >> $GITHUB_STEP_SUMMARY
+              echo "|-------------|-------|" >> $GITHUB_STEP_SUMMARY
+              echo "| Coverage %  | $PERCENT |" >> $GITHUB_STEP_SUMMARY
+              echo "| Covered     | $COVERED |" >> $GITHUB_STEP_SUMMARY
+              echo "| Missed      | $MISSED |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "No coverage data found." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
+          fi
