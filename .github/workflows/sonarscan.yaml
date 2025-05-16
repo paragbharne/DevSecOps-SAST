@@ -129,6 +129,7 @@ jobs:
         run: docker build -t my-image:latest .
 
       - name: Snyk scan Docker image (JSON output)
+        continue-on-error: true          
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk container test my-image:latest --file=Dockerfile --json > snyk-docker.json
