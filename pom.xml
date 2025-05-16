@@ -6,7 +6,7 @@
     <groupId>io.snyk.snyklabs</groupId>
     <artifactId>multiroom-chat-goof</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>snyk-chat-goof</name>
+    <relativePath>../pom.xml</relativePath>
     <description>vulnerable chat app for demonstration</description>
 
     <properties>
