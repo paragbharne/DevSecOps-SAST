@@ -117,8 +117,12 @@ jobs:
           name: snyk-report
           path: snyk.json
 
-      - name: Upload JaCoCo HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-html-report
-          path: target/site/jacoco/
+      - name: Add Snyk summary to job
+        run: |
+          echo "## Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
+          cat snyk.json | jq '.summary' >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Sonarqube summary
+        run: |
+          echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
