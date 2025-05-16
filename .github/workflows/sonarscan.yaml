@@ -138,39 +138,27 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
 
+      - name: Install xmlstarlet
+        run: sudo apt-get update && sudo apt-get install -y xmlstarlet
+
       - name: Add detailed JaCoCo coverage summary to job
         run: |
           echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
           if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
             echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
             echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
-            xmllint --xpath '//package' tests/target/site/jacoco-aggregate/jacoco.xml | \
-            xmllint --format - | \
-            awk '
-              /<package name=/ {
-                match($0, /name="([^"]+)"/, arr)
-                pkg=arr[1]
-              }
-              /<counter type="INSTRUCTION"/ {
-                match($0, /missed="([0-9]+)"/, mi); match($0, /covered="([0-9]+)"/, ci)
-                instr_missed=mi[1]; instr_covered=ci[1]
-                instr_total=instr_missed+instr_covered
-                instr_cov=(instr_total>0)?sprintf("%.0f%%", 100*instr_covered/instr_total):"n/a"
-              }
-              /<counter type="BRANCH"/ {
-                match($0, /missed="([0-9]+)"/, mb); match($0, /covered="([0-9]+)"/, cb)
-                branch_missed=mb[1]; branch_covered=cb[1]
-                branch_total=branch_missed+branch_covered
-                branch_cov=(branch_total>0)?sprintf("%.0f%%", 100*branch_covered/branch_total):"n/a"
-              }
-              /<counter type="COMPLEXITY"/ { match($0, /missed="([0-9]+)"/, mc); cxty=mc[1] }
-              /<counter type="LINE"/ { match($0, /missed="([0-9]+)"/, ml); lines=ml[1] }
-              /<counter type="METHOD"/ { match($0, /missed="([0-9]+)"/, mm); methods=mm[1] }
-              /<counter type="CLASS"/ { match($0, /missed="([0-9]+)"/, mcl); classes=mcl[1]
-                printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", pkg, instr_missed, instr_cov, branch_missed, branch_cov, cxty, lines, methods, classes
-              }
-            ' >> $GITHUB_STEP_SUMMARY
-      
+            xmlstarlet sel -t -m "//package" \
+              -v "concat(@name, ' | ', \
+                        counter[@type='INSTRUCTION']/@missed, ' | ', \
+                        format-number(100 * counter[@type='INSTRUCTION']/@covered div (counter[@type='INSTRUCTION']/@missed + counter[@type='INSTRUCTION']/@covered), '0'), '% | ', \
+                        counter[@type='BRANCH']/@missed, ' | ', \
+                        format-number(100 * counter[@type='BRANCH']/@covered div (counter[@type='BRANCH']/@missed + counter[@type='BRANCH']/@covered), '0'), '% | ', \
+                        counter[@type='COMPLEXITY']/@missed, ' | ', \
+                        counter[@type='LINE']/@missed, ' | ', \
+                        counter[@type='METHOD']/@missed, ' | ', \
+                        counter[@type='CLASS']/@missed)" \
+              -n tests/target/site/jacoco-aggregate/jacoco.xml | \
+            awk -F'|' '{printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5, $6, $7, $8, $9}' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
           else
