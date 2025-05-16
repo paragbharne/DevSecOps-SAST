@@ -100,7 +100,7 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --all-projects --json-file-output=snyk.json --maven-args="--no-wrapper"
+        run: snyk test --all-projects --json-file-output=snyk.json"
 
       - name: Install snyk-to-html
         run: npm install -g snyk-to-html
