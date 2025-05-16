@@ -91,6 +91,8 @@ jobs:
       #       echo "Quality Gate failed!"
       #       exit 1
       #     fi
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
 
       - name: Install Snyk CLI
         run: npm install -g snyk
@@ -98,7 +100,7 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --all-projects --json-file-output=snyk.json
+        run: snyk test --all-projects --json-file-output=snyk.json --maven-args="--no-wrapper"
 
       - name: Install snyk-to-html
         run: npm install -g snyk-to-html
