@@ -117,12 +117,12 @@ jobs:
           name: snyk-report
           path: snyk.json
 
-      - name: Add Snyk summary to job
+      - name: Add Snyk HTML report link to summary
         run: |
-          echo "## Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
-          cat snyk.json | jq '.summary' >> $GITHUB_STEP_SUMMARY
-
+          echo "## Snyk Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+          echo "[Download Snyk HTML Report](./snyk-html-report)" >> $GITHUB_STEP_SUMMARY
 
       - name: Sonarqube summary
         run: |
+          echo "## Sonarqube summary" >> $GITHUB_STEP_SUMMARY
           echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
