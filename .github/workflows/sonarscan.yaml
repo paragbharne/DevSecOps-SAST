@@ -171,7 +171,6 @@ jobs:
               }
             ' >> $GITHUB_STEP_SUMMARY
       
-            # Add a link to the full HTML report
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
           else
