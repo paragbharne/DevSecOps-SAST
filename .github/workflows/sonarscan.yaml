@@ -121,6 +121,11 @@ jobs:
           name: snyk-report
           path: snyk.json
 
+      - name: Monitor Snyk project (upload to Snyk portal)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk monitor --all-projects
+
       - name: Add Snyk HTML report link to summary
         run: |
           echo "## Snyk Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
