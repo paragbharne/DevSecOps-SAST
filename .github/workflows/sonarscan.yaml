@@ -138,25 +138,42 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
 
-      - name: Add JaCoCo coverage summary to job
+      - name: Add detailed JaCoCo coverage summary to job
         run: |
           echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
           if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
-            COVERED=$(xmllint --xpath "string(//report/counter[@type='INSTRUCTION']/@covered)" tests/target/site/jacoco-aggregate/jacoco.xml)
-            MISSED=$(xmllint --xpath "string(//report/counter[@type='INSTRUCTION']/@missed)" tests/target/site/jacoco-aggregate/jacoco.xml)
-            TOTAL=$((COVERED + MISSED))
-            if [ "$TOTAL" -gt 0 ]; then
-              PERCENT=$(awk "BEGIN {printf \"%.2f\", 100 * $COVERED / $TOTAL}")
-              echo "| Metric      | Value |" >> $GITHUB_STEP_SUMMARY
-              echo "|-------------|-------|" >> $GITHUB_STEP_SUMMARY
-              echo "| Coverage %  | $PERCENT |" >> $GITHUB_STEP_SUMMARY
-              echo "| Covered     | $COVERED |" >> $GITHUB_STEP_SUMMARY
-              echo "| Missed      | $MISSED |" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "No coverage data found." >> $GITHUB_STEP_SUMMARY
-            fi
+            echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
+            xmllint --xpath '//package' tests/target/site/jacoco-aggregate/jacoco.xml | \
+            xmllint --format - | \
+            awk '
+              /<package name=/ {
+                match($0, /name="([^"]+)"/, arr)
+                pkg=arr[1]
+              }
+              /<counter type="INSTRUCTION"/ {
+                match($0, /missed="([0-9]+)"/, mi); match($0, /covered="([0-9]+)"/, ci)
+                instr_missed=mi[1]; instr_covered=ci[1]
+                instr_total=instr_missed+instr_covered
+                instr_cov=(instr_total>0)?sprintf("%.0f%%", 100*instr_covered/instr_total):"n/a"
+              }
+              /<counter type="BRANCH"/ {
+                match($0, /missed="([0-9]+)"/, mb); match($0, /covered="([0-9]+)"/, cb)
+                branch_missed=mb[1]; branch_covered=cb[1]
+                branch_total=branch_missed+branch_covered
+                branch_cov=(branch_total>0)?sprintf("%.0f%%", 100*branch_covered/branch_total):"n/a"
+              }
+              /<counter type="COMPLEXITY"/ { match($0, /missed="([0-9]+)"/, mc); cxty=mc[1] }
+              /<counter type="LINE"/ { match($0, /missed="([0-9]+)"/, ml); lines=ml[1] }
+              /<counter type="METHOD"/ { match($0, /missed="([0-9]+)"/, mm); methods=mm[1] }
+              /<counter type="CLASS"/ { match($0, /missed="([0-9]+)"/, mcl); classes=mcl[1]
+                printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", pkg, instr_missed, instr_cov, branch_missed, branch_cov, cxty, lines, methods, classes
+              }
+            ' >> $GITHUB_STEP_SUMMARY
+      
+            # Add a link to the full HTML report
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
           else
             echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
           fi
