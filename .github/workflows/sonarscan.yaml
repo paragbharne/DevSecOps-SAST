@@ -212,9 +212,13 @@ jobs:
 
 
       - name: Generate SBOM (CycloneDX 1.4 JSON)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
 
       - name: Run Snyk SBOM test (experimental)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk sbom test --file=mysbom.json --experimental
 
       - name: Download Bomber
