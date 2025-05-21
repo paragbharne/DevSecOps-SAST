@@ -272,22 +272,26 @@ jobs:
 
 
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
       - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Generate SBOM with Syft
+      - name: Generate SBOM for local filesystem
         run: |
-          syft . -o json > sbom.json
-          syft . -o table > sbom.txt
+          syft . -o json > sbom-filesystem.json
+          syft . -o table > sbom-filesystem.txt
 
-      - name: Upload SBOM as Artifact
+      - name: Generate SBOM for Docker image
+        run: |
+          syft my-image:latest -o json > sbom-image.json
+          syft my-image:latest -o table > sbom-image.txt
+
+      - name: Upload all SBOM artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: syft-sbom
+          name: all-sboms
           path: |
-            sbom.json
-            sbom.txt
+            sbom-filesystem.json
+            sbom-filesystem.txt
+            sbom-image.json
+            sbom-image.txt
