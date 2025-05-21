@@ -389,7 +389,7 @@ jobs:
 
       - name: Add SBOM Table to Summary (Docker Image, top 10 lines)
         run: |
-          Generate Syft table output with all layers
+          #Generate Syft table output with all layers
           syft docker:openjdk:17-ea-slim-buster --scope all-layers -o table > sbom-image.txt
 
           {
