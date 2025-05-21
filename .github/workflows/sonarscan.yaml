@@ -24,6 +24,13 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean package
+
+      - name: Run frontend tests and coverage
+        working-directory: src/frontend
+        run: |
+          npm ci
+          npm run test:coverage
+
         
       - name: Cache SonarQube packages
         uses: actions/cache@v4
@@ -37,10 +44,23 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
+
+      - name: Build and analyze with backend + frontend coverage
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=devops10x_snyk-chat-goof
+        run: |
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=devops10x_snyk-chat-goof \
+            -Dsonar.organization=devops10x \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.javascript.lcov.reportPaths=src/frontend/coverage/lcov.info
+
+      # - name: Build and analyze
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=devops10x_snyk-chat-goof
 
       - name: Download SonarQube issues report
         env:
