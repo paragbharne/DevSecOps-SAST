@@ -115,8 +115,8 @@ jobs:
       #       echo "Quality Gate failed!"
       #       exit 1
       #     fi
-      # - name: Make mvnw executable
-      #   run: chmod +x ./mvnw
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
 
       - name: Install Snyk CLI
         run: npm install -g snyk
