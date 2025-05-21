@@ -432,4 +432,4 @@ jobs:
       - name: Monitor the Snyk project (upload to Snyk portal)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk container monitor myimage:latest
+        run: snyk container monitor my-image:latest
