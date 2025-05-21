@@ -423,11 +423,11 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk container test myimage:latest --file=Dockerfile --json > snyk-docker.json
 
-      - name: Upload Snyk Docker JSON report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-docker-report
-          path: snyk-docker.json
+      # - name: Upload Snyk Docker JSON report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: snyk-docker-report
+      #     path: snyk-docker.json
 
       - name: Monitor the Snyk project (upload to Snyk portal)
         env:
