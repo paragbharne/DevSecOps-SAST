@@ -118,82 +118,57 @@ jobs:
       # - name: Make mvnw executable
       #   run: chmod +x ./mvnw
 
-      # - name: Install Snyk CLI
-      #   run: npm install -g snyk
+      - name: Install Snyk CLI
+        run: npm install -g snyk
 
-      # - name: Run Snyk to check for vulnerabilities
-      #   continue-on-error: true
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk test --all-projects --json-file-output=snyk.json
+      - name: Run Snyk to check for vulnerabilities
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --all-projects --json-file-output=snyk.json
 
-      # - name: Install snyk-to-html
-      #   run: npm install -g snyk-to-html
+      - name: Install snyk-to-html
+        run: npm install -g snyk-to-html
 
-      # - name: Convert Snyk JSON to HTML
-      #   run: snyk-to-html -i snyk.json -o snyk-report.html
+      - name: Convert Snyk JSON to HTML
+        run: snyk-to-html -i snyk.json -o snyk-report.html
         
-      # - name: Upload Snyk HTML report
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: snyk-html-report
-      #     path: snyk-report.html
+      - name: Upload Snyk HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-html-report
+          path: snyk-report.html
 
-      # - name: Upload synch report
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: snyk-report
-      #     path: snyk.json
+      - name: Upload synch report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-report
+          path: snyk.json
 
-      # - name: Build Docker image
-      #   run: docker build -t my-image:latest .
+      - name: Build Docker image
+        run: docker build -t my-image:latest .
 
-      # - name: Snyk scan Docker image (JSON output)
-      #   continue-on-error: true          
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk container test my-image:latest --file=Dockerfile --json > snyk-docker.json
+      - name: Snyk scan Docker image (JSON output)
+        continue-on-error: true          
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container test my-image:latest --file=Dockerfile --json > snyk-docker.json
 
-      # - name: Upload Snyk Docker JSON report
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: snyk-docker-report
-      #     path: snyk-docker.json
+      - name: Upload Snyk Docker JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-docker-report
+          path: snyk-docker.json
 
-      # - name: Monitor Snyk project (upload to Snyk portal)
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk monitor --all-projects
+      - name: Monitor Snyk project (upload to Snyk portal)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk monitor --all-projects
 
-      # - name: Add Snyk HTML report link to summary
-      #   run: |
-      #     echo "## Snyk Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
-      #     echo "[Download Snyk HTML Report](./snyk-html-report)" >> $GITHUB_STEP_SUMMARY
-
-      # - name: Sonarqube summary
-      #   run: |
-      #     echo "## Sonarqube summary" >> $GITHUB_STEP_SUMMARY
-      #     echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
-
-      # - name: Add Snyk summary to job
-      #   run: |
-      #     echo "## 🛡️ Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Project | Vulnerabilities |" >> $GITHUB_STEP_SUMMARY
-      #     echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
-      #     jq -r '.[] | select(.vulnerabilities != null) | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' snyk.json >> $GITHUB_STEP_SUMMARY
-
-      # - name: Add Snyk Docker scan summary to job
-      #   run: |
-      #     echo "## Snyk Docker Image Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
-      #     echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-      #     jq -r '
-      #       .vulnerabilities // [] | group_by(.severity) | 
-      #       map({severity: .[0].severity, count: length}) | 
-      #       .[] | "| \(.severity | ascii_upcase) | \(.count) |"
-      #     ' snyk-docker.json >> $GITHUB_STEP_SUMMARY
-      #     echo "" >> $GITHUB_STEP_SUMMARY
-      #     echo "[Download full Snyk Docker JSON report](./snyk-docker-report)" >> $GITHUB_STEP_SUMMARY
+      - name: Sonarqube summary
+        run: |
+          echo "## Sonarqube summary" >> $GITHUB_STEP_SUMMARY
+          echo "[Download full Snyk HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
 
       # - name: Add Summary SYNK to $GITHUB_STEP_SUMMARY
       #   run: |
@@ -247,205 +222,190 @@ jobs:
       #     echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
       #     echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
 
-      # - name: Generate Snyk Summary from snyk.json
-      #   run: |
-      #     Total vulnerability *occurrences*
-      #     total=$(jq '[.[] | .vulnerabilities | length] | add' snyk.json)
 
-      #     Unique vulnerability IDs
-      #     unique=$(jq '[.[] | .vulnerabilities[]? | .id] | unique | length' snyk.json)
+      - name: Post Unique Issues by Severity with Total and HTML Report Link
+        run: |
+          critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical") | .id] | unique | length' snyk.json)
+          high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high") | .id] | unique | length' snyk.json)
+          medium=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="medium") | .id] | unique | length' snyk.json)
+          low=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="low") | .id] | unique | length' snyk.json)
 
-      #     Severity breakdown
-      #     critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical")] | length' snyk.json)
-      #     high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high")] | length' snyk.json)
-      #     medium=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="medium")] | length' snyk.json)
-      #     low=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="low")] | length' snyk.json)
+          total=$((critical + high + medium + low))
 
-      #     Write to GitHub Summary
-      #     {
-      #       echo "## 🛡️ Snyk Vulnerability Summary"
-      #       echo ""
-      #       echo "**Total Vulnerabilities (Occurrences):** $total  "
-      #       echo "**Unique Issues (Deduplicated by ID):** $unique"
-      #       echo ""
-      #       echo "| Severity  | Count |"
-      #       echo "|-----------|-------|"
-      #       echo "| Critical  | $critical |"
-      #       echo "| High      | $high |"
-      #       echo "| Medium    | $medium |"
-      #       echo "| Low       | $low |"
-      #     } >> $GITHUB_STEP_SUMMARY
-
-      # - name: Post Unique Issues by Severity with Total and HTML Report Link
-      #   run: |
-      #     critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical") | .id] | unique | length' snyk.json)
-      #     high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high") | .id] | unique | length' snyk.json)
-      #     medium=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="medium") | .id] | unique | length' snyk.json)
-      #     low=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="low") | .id] | unique | length' snyk.json)
-
-      #     total=$((critical + high + medium + low))
-
-      #     echo "## 🛡️ Snyk Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
-      #     echo "" >> $GITHUB_STEP_SUMMARY
-      #     echo "**Unique Issues by Severity: $total**" >> $GITHUB_STEP_SUMMARY
-      #     echo "" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Severity  | Unique Count |" >> $GITHUB_STEP_SUMMARY
-      #     echo "|-----------|---------------|" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Critical  | $critical |" >> $GITHUB_STEP_SUMMARY
-      #     echo "| High      | $high |" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
-      #     echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
-      #     echo "| **Total** | **$total** |" >> $GITHUB_STEP_SUMMARY
-      #     echo "" >> $GITHUB_STEP_SUMMARY
-      #     echo "📄 Full HTML Report available in the [Artifacts section](#artifacts)" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ Snyk Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Unique Issues by Severity: $total**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity  | Unique Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|---------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical  | $critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| High      | $high |" >> $GITHUB_STEP_SUMMARY
+          echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **$total** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📄 Full HTML Report available in the [Artifacts section](#artifacts)" >> $GITHUB_STEP_SUMMARY
 
 
 
-      # - name: SonarQube summary
-      #   run: |
-      #     echo "## SonarQube Summary" >> $GITHUB_STEP_SUMMARY
-      #     echo "[View SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=devops10x_springboot)" >> $GITHUB_STEP_SUMMARY
+      - name: SonarQube summary
+        run: |
+          echo "## SonarQube Summary" >> $GITHUB_STEP_SUMMARY
+          echo "[View SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=devops10x_springboot)" >> $GITHUB_STEP_SUMMARY
 
-      # - name: Install xmllint
-      #   run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
-      # - name: Install xmlstarlet
-      #   run: sudo apt-get update && sudo apt-get install -y xmlstarlet
+      - name: Install xmlstarlet
+        run: sudo apt-get update && sudo apt-get install -y xmlstarlet
 
-      # - name: Add detailed JaCoCo coverage summary to job
-      #   run: |
-      #     echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
-      #     if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
-      #       echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
-      #       echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
-      #       xmlstarlet sel -t -m "//package" \
-      #         -v "concat(@name, ' | ', \
-      #                   counter[@type='INSTRUCTION']/@missed, ' | ', \
-      #                   format-number(100 * counter[@type='INSTRUCTION']/@covered div (counter[@type='INSTRUCTION']/@missed + counter[@type='INSTRUCTION']/@covered), '0'), '% | ', \
-      #                   counter[@type='BRANCH']/@missed, ' | ', \
-      #                   format-number(100 * counter[@type='BRANCH']/@covered div (counter[@type='BRANCH']/@missed + counter[@type='BRANCH']/@covered), '0'), '% | ', \
-      #                   counter[@type='COMPLEXITY']/@missed, ' | ', \
-      #                   counter[@type='LINE']/@missed, ' | ', \
-      #                   counter[@type='METHOD']/@missed, ' | ', \
-      #                   counter[@type='CLASS']/@missed)" \
-      #         -n tests/target/site/jacoco-aggregate/jacoco.xml | \
-      #       awk -F'|' '{printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5, $6, $7, $8, $9}' >> $GITHUB_STEP_SUMMARY
-      #       echo "" >> $GITHUB_STEP_SUMMARY
-      #       echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
-      #     else
-      #       echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
-      #     fi
-
-
-      # - name: Generate SBOM (CycloneDX 1.4 JSON)
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
-
-      # - name: Run Snyk SBOM test (experimental)
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk sbom test --file=mysbom.json --experimental
-
-      # - name: Download Bomber
-      #   run: |
-      #     wget https://github.com/devops-kung-fu/bomber/releases/download/v0.4.1/bomber_0.4.1_linux_amd64.deb
-      #     sudo dpkg -i bomber_0.4.1_linux_amd64.deb
-
-      # - name: Scan SBOM with Bomber and Snyk
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: bomber scan --provider snyk --token $SNYK_TOKEN mysbom.json --output bomber-report.json
-
-      # - name: Upload SBOM CycloneDX JSON
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: sbom-cyclonedx-json
-      #     path: mysbom.json
-
-      # - name: Upload Bomber scan report
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: bomber-report
-      #     path: bomber-report.json
-
-      # - name: SBOM CycloneDX JSON for docker image
-      #   continue-on-error: true          
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   run: snyk container sbom --format=cyclonedx1.6+json my-image:latest > mySBOM.json
-
-      # - name: Upload SBOM CycloneDX JSON for docker image
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: sbom-cyclonedx-json-docker
-      #     path: mySBOM.json
-
-      # - name: Summarize High/Critical Docker Vulns (CVSS > 9)
-      #   run: |
-      #     {
-      #       echo "### 🚨 Docker Vulnerabilities (CVSS > 9)"
-      #       echo ""
-      #       echo "| Package | CVE | Title | Severity | Score |"
-      #       echo "|---------|-----|-------|----------|-------|"
-      #       jq -r '
-      #         .vulnerabilities[]
-      #         | select((.severity == "high" or .severity == "critical") and (.cvssScore | tonumber) > 9)
-      #         | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
-      #       ' snyk-docker.json
-      #     } >> $GITHUB_STEP_SUMMARY
+      - name: Add detailed JaCoCo coverage summary to job
+        run: |
+          echo "## JaCoCo Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          if [ -f tests/target/site/jacoco-aggregate/jacoco.xml ]; then
+            echo "| Package | Missed Instr. | Instr. Cov. | Missed Branches | Branch Cov. | Missed Cxty | Missed Lines | Missed Methods | Missed Classes |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|---------------|-------------|-----------------|-------------|-------------|--------------|----------------|----------------|" >> $GITHUB_STEP_SUMMARY
+            xmlstarlet sel -t -m "//package" \
+              -v "concat(@name, ' | ', \
+                        counter[@type='INSTRUCTION']/@missed, ' | ', \
+                        format-number(100 * counter[@type='INSTRUCTION']/@covered div (counter[@type='INSTRUCTION']/@missed + counter[@type='INSTRUCTION']/@covered), '0'), '% | ', \
+                        counter[@type='BRANCH']/@missed, ' | ', \
+                        format-number(100 * counter[@type='BRANCH']/@covered div (counter[@type='BRANCH']/@missed + counter[@type='BRANCH']/@covered), '0'), '% | ', \
+                        counter[@type='COMPLEXITY']/@missed, ' | ', \
+                        counter[@type='LINE']/@missed, ' | ', \
+                        counter[@type='METHOD']/@missed, ' | ', \
+                        counter[@type='CLASS']/@missed)" \
+              -n tests/target/site/jacoco-aggregate/jacoco.xml | \
+            awk -F'|' '{printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", $1, $2, $3, $4, $5, $6, $7, $8, $9}' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "[Download full JaCoCo HTML report](./tests/target/site/jacoco-aggregate/index.html)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "JaCoCo XML report not found." >> $GITHUB_STEP_SUMMARY
+          fi
 
 
+      - name: Generate SBOM (CycloneDX 1.4 JSON)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
 
-      # - name: Install Syft
-      #   run: |
-      #     curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      - name: Run Snyk SBOM test (experimental)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk sbom test --file=mysbom.json --experimental
 
-      # - name: Generate SBOM for local filesystem
-      #   run: |
-      #     syft . -o json > sbom-filesystem.json
-      #     syft . -o table > sbom-filesystem.txt
+      - name: Download Bomber
+        run: |
+          wget https://github.com/devops-kung-fu/bomber/releases/download/v0.4.1/bomber_0.4.1_linux_amd64.deb
+          sudo dpkg -i bomber_0.4.1_linux_amd64.deb
 
-      # - name: Generate SBOM for Docker image
-      #   run: |
-      #     syft my-image:latest -o json > sbom-image.json
-      #     syft my-image:latest -o table > sbom-image.txt
+      - name: Scan SBOM with Bomber and Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: bomber scan --provider snyk --token $SNYK_TOKEN mysbom.json --output bomber-report.json
 
-      # - name: Upload all SBOM artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: all-sboms
-      #     path: |
-      #       sbom-filesystem.json
-      #       sbom-filesystem.txt
-      #       sbom-image.json
-      #       sbom-image.txt
+      - name: Upload SBOM CycloneDX JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx-json
+          path: mysbom.json
 
-      # - name: Add SBOM Table to Summary (Docker Image, top 10 lines)
-      #   run: |
-      #     Generate Syft table output with all layers
-      #     syft docker:openjdk:17-ea-slim-buster --scope all-layers -o table > sbom-image.txt
+      - name: Upload Bomber scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bomber-report
+          path: bomber-report.json
 
-      #     {
-      #       echo "### 📦 SBOM for Docker Image (Syft Table Format, Top 10 Lines)"
-      #       echo '_Scope: all-layers_'
-      #       echo ''
-      #       echo '```'
-      #       head -n 10 sbom-image.txt
-      #       echo '```'
-      #     } >> $GITHUB_STEP_SUMMARY
+      - name: SBOM CycloneDX JSON for docker image
+        continue-on-error: true          
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container sbom --format=cyclonedx1.6+json my-image:latest > mySBOM.json
+
+      - name: Upload SBOM CycloneDX JSON for docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx-json-docker
+          path: mySBOM.json
 
 
-      # - name: Add SBOM Table to Summary (Filesystem, top 10 lines)
-      #   run: |
-      #     syft . --scope all-layers -o table > sbom-filesystem.txt
+      - name: Add Snyk Docker scan summary to job
+        run: |
+          echo "## Snyk Docker Image Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '
+            .vulnerabilities // [] | group_by(.severity) | 
+            map({severity: .[0].severity, count: length}) | 
+            .[] | "| \(.severity | ascii_upcase) | \(.count) |"
+          ' snyk-docker.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[Download full Snyk Docker JSON report](./snyk-docker-report)" >> $GITHUB_STEP_SUMMARY
 
-      #     {
-      #       echo "### 📁 SBOM for Filesystem (Syft Table Format, Top 10 Lines)"
-      #       echo '_Scope: all-layers_'
-      #       echo ''
-      #       echo '```'
-      #       head -n 10 sbom-filesystem.txt
-      #       echo '```'
-      #     } >> $GITHUB_STEP_SUMMARY
+
+      - name: Summarize High/Critical Docker Vulns (CVSS > 9)
+        run: |
+          {
+            echo "### 🚨 Docker Vulnerabilities (CVSS > 9)"
+            echo ""
+            echo "| Package | CVE | Title | Severity | Score |"
+            echo "|---------|-----|-------|----------|-------|"
+            jq -r '
+              .vulnerabilities[]
+              | select((.severity == "high" or .severity == "critical") and (.cvssScore | tonumber) > 9)
+              | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
+            ' snyk-docker.json
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM for local filesystem
+        run: |
+          syft . -o json > sbom-filesystem.json
+          syft . -o table > sbom-filesystem.txt
+
+      - name: Generate SBOM for Docker image
+        run: |
+          syft my-image:latest -o json > sbom-image.json
+          syft my-image:latest -o table > sbom-image.txt
+
+      - name: Upload all SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-sboms
+          path: |
+            sbom-filesystem.json
+            sbom-filesystem.txt
+            sbom-image.json
+            sbom-image.txt
+
+      - name: Add SBOM Table to Summary (Docker Image, top 10 lines)
+        run: |
+          Generate Syft table output with all layers
+          syft docker:openjdk:17-ea-slim-buster --scope all-layers -o table > sbom-image.txt
+
+          {
+            echo "### 📦 SBOM for Docker Image (Syft Table Format, Top 10 Lines)"
+            echo '_Scope: all-layers_'
+            echo ''
+            echo '```'
+            head -n 10 sbom-image.txt
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Add SBOM Table to Summary (Filesystem, top 10 lines)
+        run: |
+          syft . --scope all-layers -o table > sbom-filesystem.txt
+
+          {
+            echo "### 📁 SBOM for Filesystem (Syft Table Format, Top 10 Lines)"
+            echo '_Scope: all-layers_'
+            echo ''
+            echo '```'
+            head -n 10 sbom-filesystem.txt
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
