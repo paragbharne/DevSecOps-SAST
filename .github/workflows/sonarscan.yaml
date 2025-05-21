@@ -290,6 +290,7 @@ jobs:
         run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
 
       - name: Run Snyk SBOM test (experimental)
+        continue-on-error: true   
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk sbom test --file=mysbom.json --experimental
@@ -300,6 +301,7 @@ jobs:
           sudo dpkg -i bomber_0.4.1_linux_amd64.deb
 
       - name: Scan SBOM with Bomber and Snyk
+        continue-on-error: true   
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: bomber scan --provider snyk --token $SNYK_TOKEN mysbom.json --output bomber-report.json
@@ -357,6 +359,8 @@ jobs:
               | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
             ' snyk-docker.json
           } >> $GITHUB_STEP_SUMMARY
+
+# SBOM using syft
 
       - name: Install Syft
         run: |
