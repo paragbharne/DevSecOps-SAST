@@ -256,16 +256,38 @@ jobs:
       #     name: sbom-cyclonedx-json-docker
       #     path: mySBOM.json
 
-      - name: Generate Markdown Table
+      - name: Generate Markdown Summary (High/Critical/Medium)
         run: |
           {
-            echo "### 📦 Snyk Vulnerability Summary"
+            echo "### 🚨 Snyk Vulnerability Summary (High, Critical, Medium)"
             echo ""
             echo "| Package | CVE | Title | Severity | Score |"
             echo "|---------|-----|-------|----------|-------|"
             jq -r '
-              .vulnerabilities[] |
-              "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
+              .vulnerabilities[]
+              | select(.severity == "high" or .severity == "critical")
+              | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
             ' snyk-docker.json
           } >> $GITHUB_STEP_SUMMARY
 
+
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM with Syft
+        run: |
+          syft . -o json > sbom.json
+          syft . -o table > sbom.txt
+
+      - name: Upload SBOM as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: syft-sbom
+          path: |
+            sbom.json
+            sbom.txt
