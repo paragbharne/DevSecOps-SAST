@@ -256,7 +256,7 @@ jobs:
       #       echo "| Low       | $low |"
       #     } >> $GITHUB_STEP_SUMMARY
 
-      - name: Post Unique Issues by Severity with Total
+      - name: Post Unique Issues by Severity with Total and HTML Report Link
         run: |
           critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical") | .id] | unique | length' snyk.json)
           high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high") | .id] | unique | length' snyk.json)
@@ -267,7 +267,7 @@ jobs:
 
           echo "## 🛡️ Snyk Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Unique Issues by Severity:**" >> $GITHUB_STEP_SUMMARY
+          echo "**Unique Issues by Severity: $total**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Severity  | Unique Count |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|---------------|" >> $GITHUB_STEP_SUMMARY
@@ -276,6 +276,9 @@ jobs:
           echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
           echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
           echo "| **Total** | **$total** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📄 Full HTML Report available in the [Artifacts section](#artifacts)" >> $GITHUB_STEP_SUMMARY
+
 
 
       # - name: SonarQube summary
