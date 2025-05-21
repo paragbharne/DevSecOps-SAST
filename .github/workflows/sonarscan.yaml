@@ -414,3 +414,22 @@ jobs:
             head -n 10 sbom-filesystem.txt
             echo '```'
           } >> $GITHUB_STEP_SUMMARY
+
+
+#Synk for docker scanning
+      - name: Snyk scan Docker image (JSON output)
+        continue-on-error: true          
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container test myimage:latest --file=Dockerfile --json > snyk-docker.json
+
+      - name: Upload Snyk Docker JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-docker-report
+          path: snyk-docker.json
+
+      - name: Monitor the Snyk project (upload to Snyk portal)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container monitor myimage:latest
