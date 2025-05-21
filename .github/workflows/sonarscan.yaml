@@ -194,12 +194,12 @@ jobs:
           echo "| **Total** | **$total** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo "### 🚨 High/Critical Vulnerabilities (CVSS > 7)" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚨 High/Critical Vulnerabilities (CVSS > 9)" >> $GITHUB_STEP_SUMMARY
           echo '| Package | Title | Severity | CVSS Score | Fixed In |' >> $GITHUB_STEP_SUMMARY
           echo '|---------|-------|----------|------------|----------|' >> $GITHUB_STEP_SUMMARY
           jq -r '
             .[] | .vulnerabilities[] |
-            select((.severity=="high" or .severity=="critical") and (.cvssScore | tonumber) >= 7) |
+            select((.severity=="high" or .severity=="critical") and (.cvssScore | tonumber) >= 9) |
             "| \(.packageName) | \(.title) | \(.severity) | \(.cvssScore) | \((.fixedIn[0] // "N/A")) |"
           ' snyk.json >> $GITHUB_STEP_SUMMARY
 
@@ -226,6 +226,35 @@ jobs:
           echo "| High      | $high |" >> $GITHUB_STEP_SUMMARY
           echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
           echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate Snyk Summary from snyk.json
+        run: |
+          # Total vulnerability *occurrences*
+          total=$(jq '[.[] | .vulnerabilities | length] | add' snyk.json)
+
+          # Unique vulnerability IDs
+          unique=$(jq '[.[] | .vulnerabilities[]? | .id] | unique | length' snyk.json)
+
+          # Severity breakdown
+          critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical")] | length' snyk.json)
+          high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high")] | length' snyk.json)
+          medium=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="medium")] | length' snyk.json)
+          low=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="low")] | length' snyk.json)
+
+          # Write to GitHub Summary
+          {
+            echo "## 🛡️ Snyk Vulnerability Summary"
+            echo ""
+            echo "**Total Vulnerabilities (Occurrences):** $total  "
+            echo "**Unique Issues (Deduplicated by ID):** $unique"
+            echo ""
+            echo "| Severity  | Count |"
+            echo "|-----------|-------|"
+            echo "| Critical  | $critical |"
+            echo "| High      | $high |"
+            echo "| Medium    | $medium |"
+            echo "| Low       | $low |"
+          } >> $GITHUB_STEP_SUMMARY
 
 
       # - name: SonarQube summary
@@ -318,7 +347,7 @@ jobs:
             echo "|---------|-----|-------|----------|-------|"
             jq -r '
               .vulnerabilities[]
-              | select((.severity == "high" or .severity == "critical") and (.cvssScore | tonumber) > 8)
+              | select((.severity == "high" or .severity == "critical") and (.cvssScore | tonumber) > 9)
               | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
             ' snyk-docker.json
           } >> $GITHUB_STEP_SUMMARY
