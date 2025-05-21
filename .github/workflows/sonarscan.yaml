@@ -175,6 +175,39 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "[Download full Snyk Docker JSON report](./snyk-docker-report)" >> $GITHUB_STEP_SUMMARY
 
+      - name: Add Summary SYNK to $GITHUB_STEP_SUMMARY
+        run: |
+          total=$(jq '[.[] | .vulnerabilities | length] | add' snyk.json)
+          high=$(jq '[.[] | .vulnerabilities[] | select(.severity=="high")] | length' snyk.json)
+          critical=$(jq '[.[] | .vulnerabilities[] | select(.severity=="critical")] | length' snyk.json)
+          medium=$(jq '[.[] | .vulnerabilities[] | select(.severity=="medium")] | length' snyk.json)
+          low=$(jq '[.[] | .vulnerabilities[] | select(.severity=="low")] | length' snyk.json)
+
+          echo "## 🛡️ Snyk Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity  | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical  | $critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| High      | $high |" >> $GITHUB_STEP_SUMMARY
+          echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Total** | **$total** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 🚨 High/Critical Vulnerabilities (CVSS > 7)" >> $GITHUB_STEP_SUMMARY
+          echo '| Package | Title | Severity | CVSS Score | Fixed In |' >> $GITHUB_STEP_SUMMARY
+          echo '|---------|-------|----------|------------|----------|' >> $GITHUB_STEP_SUMMARY
+          jq -r '
+            .[] | .vulnerabilities[] |
+            select((.severity=="high" or .severity=="critical") and (.cvssScore | tonumber) >= 7) |
+            "| \(.packageName) | \(.title) | \(.severity) | \(.cvssScore) | \((.fixedIn[0] // "N/A")) |"
+          ' snyk.json >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📄 [Download full HTML report](./snyk-report.html)" >> $GITHUB_STEP_SUMMARY
+
+
+
       # - name: SonarQube summary
       #   run: |
       #     echo "## SonarQube Summary" >> $GITHUB_STEP_SUMMARY
