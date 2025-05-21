@@ -206,15 +206,26 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📄 [Download full HTML report](./snyk-report.html)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Add Smart Summary to $GITHUB_STEP_SUMMARY
+      - name: Add Snyk Summary to GitHub Actions
         run: |
-          total_occurrences=$(jq '[.[] | .vulnerabilities | length] | add' snyk.json)
-          unique_issues=$(jq '.issues.vulnerabilities | length' snyk.json)
+          total=$(jq '[.[] | .vulnerabilities | length] | add' snyk.json)
+          unique=$(jq '[.[] | .vulnerabilities[]?.id] | unique | length' snyk.json)
+          high=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="high")] | length' snyk.json)
+          critical=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="critical")] | length' snyk.json)
+          medium=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="medium")] | length' snyk.json)
+          low=$(jq '[.[] | .vulnerabilities[]? | select(.severity=="low")] | length' snyk.json)
 
-          echo "## 🛡️ Snyk Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total Vulnerabilities (Occurrences across projects):** $total_occurrences" >> $GITHUB_STEP_SUMMARY
-          echo "**Unique Issues (Deduplicated):** $unique_issues" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Vulnerabilities (Occurrences):** $total" >> $GITHUB_STEP_SUMMARY
+          echo "**Unique Issues (Deduplicated):** $unique" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity  | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical  | $critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| High      | $high |" >> $GITHUB_STEP_SUMMARY
+          echo "| Medium    | $medium |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low       | $low |" >> $GITHUB_STEP_SUMMARY
 
 
       # - name: SonarQube summary
