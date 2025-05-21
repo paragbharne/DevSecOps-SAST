@@ -244,14 +244,28 @@ jobs:
       #     name: bomber-report
       #     path: bomber-report.json
 
-      - name: SBOM CycloneDX JSON for docker image
-        continue-on-error: true          
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk container sbom --format=cyclonedx1.6+json my-image:latest > mySBOM.json
+      # - name: SBOM CycloneDX JSON for docker image
+      #   continue-on-error: true          
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: snyk container sbom --format=cyclonedx1.6+json my-image:latest > mySBOM.json
 
-      - name: Upload SBOM CycloneDX JSON for docker image
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-cyclonedx-json-docker
-          path: mySBOM.json
+      # - name: Upload SBOM CycloneDX JSON for docker image
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sbom-cyclonedx-json-docker
+      #     path: mySBOM.json
+
+      - name: Generate Markdown Table
+        run: |
+          {
+            echo "### 📦 Snyk Vulnerability Summary"
+            echo ""
+            echo "| Package | CVE | Title | Severity | Score |"
+            echo "|---------|-----|-------|----------|-------|"
+            jq -r '
+              .vulnerabilities[] |
+              "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
+            ' snyk-docker.json
+          } >> $GITHUB_STEP_SUMMARY
+
