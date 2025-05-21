@@ -211,35 +211,47 @@ jobs:
       #     fi
 
 
-      - name: Generate SBOM (CycloneDX 1.4 JSON)
+      # - name: Generate SBOM (CycloneDX 1.4 JSON)
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
+
+      # - name: Run Snyk SBOM test (experimental)
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: snyk sbom test --file=mysbom.json --experimental
+
+      # - name: Download Bomber
+      #   run: |
+      #     wget https://github.com/devops-kung-fu/bomber/releases/download/v0.4.1/bomber_0.4.1_linux_amd64.deb
+      #     sudo dpkg -i bomber_0.4.1_linux_amd64.deb
+
+      # - name: Scan SBOM with Bomber and Snyk
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: bomber scan --provider snyk --token $SNYK_TOKEN mysbom.json --output bomber-report.json
+
+      # - name: Upload SBOM CycloneDX JSON
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sbom-cyclonedx-json
+      #     path: mysbom.json
+
+      # - name: Upload Bomber scan report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: bomber-report
+      #     path: bomber-report.json
+
+      - name: SBOM CycloneDX JSON for docker image
+        continue-on-error: true          
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk sbom --format=cyclonedx1.4+json --json-file-output=mysbom.json
+        run: snyk container sbom --format=cyclonedx1.6+json my-image:latest > mySBOM.json
 
-      - name: Run Snyk SBOM test (experimental)
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk sbom test --file=mysbom.json --experimental
-
-      - name: Download Bomber
-        run: |
-          wget https://github.com/devops-kung-fu/bomber/releases/download/v0.4.1/bomber_0.4.1_linux_amd64.deb
-          sudo dpkg -i bomber_0.4.1_linux_amd64.deb
-
-      - name: Scan SBOM with Bomber and Snyk
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: bomber scan --provider snyk --token $SNYK_TOKEN mysbom.json --output bomber-report.json
-
-      - name: Upload SBOM CycloneDX JSON
+      - name: Upload SBOM CycloneDX JSON for docker image
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-cyclonedx-json
-          path: mysbom.json
-
-      - name: Upload Bomber scan report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: bomber-report
-          path: bomber-report.json
+          name: sbom-cyclonedx-json-docker
+          path: mySBOM.json
