@@ -256,16 +256,16 @@ jobs:
       #     name: sbom-cyclonedx-json-docker
       #     path: mySBOM.json
 
-      - name: Generate Markdown Summary (High/Critical/Medium)
+      - name: Summarize High/Critical Docker Vulns (CVSS > 8)
         run: |
           {
-            echo "### 🚨 Snyk Vulnerability Summary (High, Critical, Medium)"
+            echo "### 🚨 Docker Vulnerabilities (CVSS > 8)"
             echo ""
             echo "| Package | CVE | Title | Severity | Score |"
             echo "|---------|-----|-------|----------|-------|"
             jq -r '
               .vulnerabilities[]
-              | select(.severity == "high" or .severity == "critical")
+              | select((.severity == "high" or .severity == "critical") and (.cvssScore | tonumber) > 8)
               | "| \(.packageName) | \((.identifiers.CVE[0] // "N/A")) | \(.title) | \(.severity) | \(.cvssScore) |"
             ' snyk-docker.json
           } >> $GITHUB_STEP_SUMMARY
@@ -295,3 +295,31 @@ jobs:
             sbom-filesystem.txt
             sbom-image.json
             sbom-image.txt
+
+      - name: Add SBOM Table to Summary (Docker Image, top 10 lines)
+        run: |
+          # Generate Syft table output with all layers
+          syft docker:openjdk:17-ea-slim-buster --scope all-layers -o table > sbom-image.txt
+
+          {
+            echo "### 📦 SBOM for Docker Image (Syft Table Format, Top 10 Lines)"
+            echo '_Scope: all-layers_'
+            echo ''
+            echo '```'
+            head -n 10 sbom-image.txt
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Add SBOM Table to Summary (Filesystem, top 10 lines)
+        run: |
+          syft . --scope all-layers -o table > sbom-filesystem.txt
+
+          {
+            echo "### 📁 SBOM for Filesystem (Syft Table Format, Top 10 Lines)"
+            echo '_Scope: all-layers_'
+            echo ''
+            echo '```'
+            head -n 10 sbom-filesystem.txt
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
