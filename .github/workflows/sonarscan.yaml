@@ -29,7 +29,7 @@ jobs:
         working-directory: src/frontend
         run: |
           npm ci
-          npm run test:coverage --passWithNoTests
+          npm run test:coverage
 
         
       - name: Cache SonarQube packages

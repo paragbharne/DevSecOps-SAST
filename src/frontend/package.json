@@ -9,7 +9,7 @@
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage --passWithNoTests"
   },
   "dependencies": {
     "cross-env": "^5.2.0",
