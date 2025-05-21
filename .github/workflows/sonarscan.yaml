@@ -157,10 +157,10 @@ jobs:
 
       - name: Add Snyk summary to job
         run: |
-          echo "## Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ Snyk Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Project | Vulnerabilities |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
-          cat snyk.json | jq -r '.[] | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' >> $GITHUB_STEP_SUMMARY
+          jq -r '.[] | select(.vulnerabilities != null) | "| \(.displayTargetFile) | \(.vulnerabilities | length) |"' snyk.json >> $GITHUB_STEP_SUMMARY
 
       - name: Add Snyk Docker scan summary to job
         run: |
@@ -256,10 +256,10 @@ jobs:
       #     name: sbom-cyclonedx-json-docker
       #     path: mySBOM.json
 
-      - name: Summarize High/Critical Docker Vulns (CVSS > 8)
+      - name: Summarize High/Critical Docker Vulns (CVSS > 9)
         run: |
           {
-            echo "### 🚨 Docker Vulnerabilities (CVSS > 8)"
+            echo "### 🚨 Docker Vulnerabilities (CVSS > 9)"
             echo ""
             echo "| Package | CVE | Title | Severity | Score |"
             echo "|---------|-----|-------|----------|-------|"
