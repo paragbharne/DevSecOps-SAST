@@ -78,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
-          path: tests/target/site/jacoco-aggregate/
+          path: /target/site/jacoco/
 
       # - name: Wait for SonarCloud Quality Gate
       #   env:
