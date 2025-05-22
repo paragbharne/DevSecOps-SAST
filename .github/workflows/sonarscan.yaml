@@ -331,6 +331,13 @@ jobs:
           name: sbom-cyclonedx-json-docker
           path: mySBOM.json
 
+      - name: Upload SBOMs to Snyk Monitor
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk sbom monitor --experimental --file=mysbom.json --project-name="fs:multiroom-chat-goof"
+          snyk sbom monitor --experimental --file=mySBOM.json --project-name="docker:openjdk:17-ea-slim-buster"
+
 
       - name: Add Snyk Docker scan summary to job
         run: |
