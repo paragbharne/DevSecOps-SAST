@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - image
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
