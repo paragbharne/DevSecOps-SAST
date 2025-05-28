@@ -1,4 +1,4 @@
-name: SonarQube
+name: Docker Image Hardening
 on:
   workflow_dispatch:       
   push:
