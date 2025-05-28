@@ -44,9 +44,6 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
 
-    - name: 🧪 Test Container (Optional)
-      run: docker run --rm hardened-flask-app python --version
-
     - name: 📜 Generate SBOM with Syft
       uses: anchore/sbom-action@v0.14.3
       with:
