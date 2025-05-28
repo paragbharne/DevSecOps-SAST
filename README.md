@@ -1,95 +1,209 @@
-# Multi-module Maven Example
+# 🔐 Container Image Hardening Using Alpine Linux
 
-This project imports JaCoCo's aggregate XML report to be able to report coverage across modules as well as unit test coverage inside the module.
+## 📌 1. Definition of Container and Image
 
-For a basic example, see [basic maven project](../maven-basic/README.md).
+### ✅ Container
+A **container** is a lightweight, standalone, executable package that includes everything needed to run a piece of software: code, runtime, system tools, libraries, and settings. Containers run consistently across different computing environments using OS-level virtualization.
 
-## Usage
-* Build the project, execute all the tests and analyze the project with SonarScanner for Maven:
-```shell
-mvn clean verify sonar:sonar
+### ✅ Image
+An **image** is a read-only template used to create containers. It contains:
+- Base OS layer
+- Application code
+- Libraries and dependencies
+- Configuration files (defined via `Dockerfile`)
+
+---
+
+## 🔐 2. What is Image Hardening?
+
+**Image hardening** is the process of securing container images by minimizing vulnerabilities and reducing the attack surface. This includes:
+- Using minimal base images (e.g., Alpine)
+- Removing unnecessary tools and services
+- Creating non-root users
+- Managing secrets securely
+- Limiting network and filesystem access
+- Enforcing least privilege
+- Enabling image signing (Docker Content Trust)
+
+---
+
+## ⚙️ 3. Hardening Techniques & Security Impact
+
+| Category                 | Hardening Technique                     | Security Impact                            |
+| ------------------------ | --------------------------------------- | ------------------------------------------ |
+| **Base Image**           | Use minimal image (e.g., Alpine)        | Smaller footprint, fewer CVEs              |
+| **Packages**             | Install only required packages          | Avoid extra tools that can be exploited    |
+|                          | Remove build-time dependencies          | Reduce surface and image size              |
+| **User**                 | Use non-root user (UID:GID)             | Prevent privilege escalation               |
+| **Layers**               | Minimize Dockerfile layers              | Reduces image complexity                   |
+| **COPY**                 | Use `COPY` instead of `ADD`             | Avoid unintentional tar or remote fetching |
+| **Filesystem**           | Set `read-only` and minimal permissions | Prevent unwanted changes during runtime    |
+| **Secrets**              | Avoid hardcoded secrets                 | Reduce chance of leaks or exposure         |
+| **Network**              | Limit outbound connections              | Minimize exfiltration or malicious access  |
+| **Services**             | Disable unnecessary daemons or cron     | Reduce potential attack vectors            |
+| **Multi-stage build**    | Split build from final runtime          | Keeps only required binaries               |
+| **Lifecycle Management** | Tag, scan, archive, retire images       | Avoid stale or vulnerable images           |
+| **DCT**                  | Docker Content Trust                    | Enables image signing and verification     |
+
+---
+
+## 🐳 4. Hardened Dockerfile Using Alpine
+
+### 📁 Project Structure
+```
+hardened-app/
+├── Dockerfile
+├── app.py
+└── requirements.txt
 ```
 
-## Description
+### 🔐 Dockerfile
 
-This project consists of 3 modules.
+```dockerfile
+# ---------- Stage 1: Build ----------
+FROM python:3.12-alpine as builder
 
-* [`module1`](module1/pom.xml) and [`module2`](module2/pom.xml) contain "business logic" and related unit tests.
+WORKDIR /app
 
-* [`tests`](tests/pom.xml) module contains integration tests which test functionality using both modules.
- `tests` module is also the one which creates the aggregate coverage report imported into SonarQube.
+# Install build dependencies only temporarily
+RUN apk add --no-cache build-base libffi-dev
 
-To generate the report we configure the JaCoCo plugin to attach its agent to the JVM which is executing the tests in the top level [pom](pom.xml). 
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-This configuration is done in the `<pluginManagment>` section, so it will be applied on every submodule.
+# ---------- Stage 2: Runtime ----------
+FROM python:3.12-alpine
 
-It is also configured inside the `coverage` profile, so this can be activated as needed (e.g. only in CI pipeline).
+LABEL maintainer="you@example.com"
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-```xml
-<build>
-  <pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </pluginManagement>
-</build>
+# Create a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+COPY --from=builder /root/.local /home/appuser/.local
+COPY --chown=appuser:appgroup app.py .
+
+# Secure permissions
+RUN chmod -R 755 /app
+
+USER appuser
+EXPOSE 5000
+
+# Read-only filesystem (add in runtime flags)
+VOLUME ["/tmp"]
+
+CMD ["python", "app.py"]
 ```
 
-Once we have configured JaCoCo to collect coverage data, we need to generate the XML coverage report to be imported into SonarQube.
+### 📦 requirements.txt
 
-We will use [report-aggregate](https://www.jacoco.org/jacoco/trunk/doc/report-aggregate-mojo.html) goal which collects data from all modules dependent on the `tests` module.
-
-To achieve this we configure the JaCoCo plugin by configuring execution of `report-aggregate` goal in `verify` phase.
-
-See [pom.xml](tests/pom.xml)
-
-```xml
-<build>
-  <plugins>
-    <plugin>
-      <groupId>org.jacoco</groupId>
-      <artifactId>jacoco-maven-plugin</artifactId>
-      <executions>
-        <execution>
-          <id>report</id>
-          <goals>
-            <goal>report-aggregate</goal>
-          </goals>
-          <phase>verify</phase>
-        </execution>
-      </executions>
-    </plugin>
-  </plugins>
-</build>
+```
+Flask==3.0.0
 ```
 
-This will create a report in `tests/target/site/jacoco-aggregate/jacoco.xml`. To import this report we will set
-`sonar.coverage.jacoco.xmlReportPaths` property with the `${maven.multiModuleProjectDirectory}` so every module knows where the coverage should be imported from
+### ⚙️ app.py
 
-```xml
-<properties>
-  <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/tests/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-</properties>
+```python
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Secure Hardened Flask App Running!"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
 ```
 
-Alternately we can set this property on the command line with the `-D` switch:
+---
 
-```shell
-mvn -Dsonar.coverage.jacoco.xmlReportPaths=C:\projects\sonar-scanning-examples\sonarscanner-maven-aggregate\tests\target\site\jacoco-aggregate\jacoco.xml clean verify sonar:sonar 
+## 🧪 5. Run the Hardened App
+
+### 🔨 Build the Image
+
+```bash
+docker build -t hardened-flask-app .
 ```
 
-We have to use an absolute path, because the report will be imported for each module separately and the path is resolved relative to the module dir.
+### 🚀 Run Securely
 
-## Documentation
+```bash
+docker run --rm \
+  --read-only \
+  --cap-drop=ALL \
+  -p 5000:5000 \
+  hardened-flask-app
+```
 
-[SonarScanner for Maven](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/)
+---
+
+## 🆚 6. Alpine vs Ubuntu Comparison
+
+| Feature         | Alpine                               | Ubuntu                                |
+| --------------- | ------------------------------------ | ------------------------------------- |
+| Size            | ~5MB                                 | ~29MB (slim) or larger                |
+| Package Manager | `apk`                                | `apt`                                 |
+| libc            | `musl`                               | `glibc`                               |
+| Performance     | Fast and lightweight                 | Heavier but more compatible           |
+| CVE Exposure    | Very low                             | Moderate                              |
+| Use Cases       | Microservices, production-ready apps | Development environments, legacy apps |
+
+---
+
+## 📊 7. Comparative Analysis of Minimal Base Images
+
+| Base        | Size   | Attack Surface | Compatibility    | Use Case                         |
+| ----------- | ------ | -------------- | ---------------- | -------------------------------- |
+| Alpine      | ~5MB   | Minimal        | Some limitations | Security-focused apps            |
+| Ubuntu Slim | ~29MB  | Moderate       | High             | General use                      |
+| Debian Slim | ~22MB  | Low            | High             | Stable production                |
+| Distroless  | ~10MB  | Minimal        | Limited          | High security, minimal footprint |
+
+---
+
+## 🔐 8. Implementing Docker Content Trust (DCT)
+
+### ✅ What is Docker Content Trust?
+
+Docker Content Trust (DCT) ensures that only signed container images are pulled, providing:
+- Image authenticity
+- Publisher integrity
+- Secure supply chain
+
+### 🔧 Enable DCT
+
+```bash
+export DOCKER_CONTENT_TRUST=1
+docker pull alpine
+```
+
+---
+
+## 🔄 9. Image Lifecycle Management
+
+### ✅ Why?
+
+Unmaintained images can:
+- Contain critical CVEs
+- Break compliance
+- Increase attack vectors
+
+### 🔁 Methodology
+
+- Tagging: Use v1, v2.1, latest, stable
+- Scanning: Automate using Trivy, Snyk, or Docker Scout
+- Retention: Clean old images via policy
+- Signing: Use DCT or Cosign
+- Audit Logging: Track changes and usage
+
+---
+
+## ✅ 10. Summary
+
+- Use minimal base images (Alpine, Distroless) to reduce attack surface
+- Apply best practices: non-root users, secure permissions, multi-stage builds
+- Enable Docker Content Trust for integrity verification
+- Perform lifecycle management to avoid stale images
+- Hardened images ensure safer deployment pipelines in modern DevOps workflows
