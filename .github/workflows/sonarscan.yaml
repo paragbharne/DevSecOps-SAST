@@ -34,6 +34,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-docker-
 
+    - name: Install Snyk CLI
+      run: npm install -g snyk
+      
     - name: 🐳 Build Hardened Docker Image
       uses: docker/build-push-action@v5
       with:
