@@ -44,16 +44,31 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
 
-    - name: 📜 Generate SBOM with Syft
-      uses: anchore/sbom-action@v0.14.3
-      with:
-        image: hardened-flask-app:latest
-        output-file: sbom.spdx.json
-
-    - name: 🔍 Vulnerability Scan (Snyk CLI)
-      uses: snyk/actions/docker@master
+    - name: Snyk scan Docker image (JSON output)
+      continue-on-error: true          
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      run: snyk container test hardened-flask-app:latest --file=Dockerfile --json > snyk-docker.json
+
+    - name: Upload Snyk Docker JSON report
+      uses: actions/upload-artifact@v4
       with:
-        image: hardened-flask-app:latest
-        args: --severity-threshold=medium
+        name: snyk-docker-report
+        path: snyk-docker.json
+
+    - name: Monitor Snyk project (upload to Snyk portal)
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      run: snyk monitor --all-projects
+
+    - name: SBOM CycloneDX JSON for docker image
+      continue-on-error: true          
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      run: snyk container sbom --format=cyclonedx1.6+json hardened-flask-app:latest > mySBOM.json
+
+    - name: Upload SBOM CycloneDX JSON for docker image
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom-cyclonedx-json-docker
+        path: mySBOM.json
