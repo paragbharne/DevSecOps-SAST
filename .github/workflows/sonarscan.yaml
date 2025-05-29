@@ -1,4 +1,4 @@
-name: Docker Image Hardening
+name: DAST with Zap
 on:
   workflow_dispatch:       
   push:
@@ -6,6 +6,7 @@ on:
       - main
       - master
       - image
+      - dast
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
@@ -17,69 +18,80 @@ jobs:
       id-token: write
 
     steps:
-    - name: 🧾 Checkout Code
-      uses: actions/checkout@v3
-
-    - name: 🔧 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: 🔐 Enable Docker Content Trust
-      run: echo "DOCKER_CONTENT_TRUST=1" >> $GITHUB_ENV
-
-    - name: 📦 Cache Docker layers
-      uses: actions/cache@v3
+    - name: Checkout
+      uses: actions/checkout@v4
       with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-docker-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
+        ref: dast
 
-    - name: Install Snyk CLI
-      run: npm install -g snyk
+    - name: ZAP Scan
+      uses: zaproxy/action-full-scan@v0.12.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
+        target: 'https://www.zaproxy.org/'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+
+    # - name: 🔧 Set up Docker Buildx
+    #   uses: docker/setup-buildx-action@v3
+
+    # - name: 🔐 Enable Docker Content Trust
+    #   run: echo "DOCKER_CONTENT_TRUST=1" >> $GITHUB_ENV
+
+    # - name: 📦 Cache Docker layers
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: /tmp/.buildx-cache
+    #     key: ${{ runner.os }}-docker-${{ github.sha }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-docker-
+
+    # - name: Install Snyk CLI
+    #   run: npm install -g snyk
       
-    - name: 🐳 Build Hardened Docker Image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: false
-        load: true
-        tags: hardened-flask-app:latest
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+    # - name: 🐳 Build Hardened Docker Image
+    #   uses: docker/build-push-action@v5
+    #   with:
+    #     context: .
+    #     push: false
+    #     load: true
+    #     tags: hardened-flask-app:latest
+    #     cache-from: type=local,src=/tmp/.buildx-cache
+    #     cache-to: type=local,dest=/tmp/.buildx-cache
 
-    - name: Snyk scan Docker image (JSON output)
-      continue-on-error: true          
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      run: snyk container test hardened-flask-app:latest --file=Dockerfile --json > snyk-docker.json
+    # - name: Snyk scan Docker image (JSON output)
+    #   continue-on-error: true          
+    #   env:
+    #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    #   run: snyk container test hardened-flask-app:latest --file=Dockerfile --json > snyk-docker.json
 
-    - name: Upload Snyk Docker JSON report
-      uses: actions/upload-artifact@v4
-      with:
-        name: snyk-docker-report
-        path: snyk-docker.json
+    # - name: Upload Snyk Docker JSON report
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: snyk-docker-report
+    #     path: snyk-docker.json
 
 
-    - name: SBOM CycloneDX JSON for docker image
-      continue-on-error: true          
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      run: snyk container sbom --format=cyclonedx1.6+json hardened-flask-app:latest > mySBOM.json
+    # - name: SBOM CycloneDX JSON for docker image
+    #   continue-on-error: true          
+    #   env:
+    #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    #   run: snyk container sbom --format=cyclonedx1.6+json hardened-flask-app:latest > mySBOM.json
 
-    - name: Upload SBOM CycloneDX JSON for docker image
-      uses: actions/upload-artifact@v4
-      with:
-        name: sbom-cyclonedx-json-docker
-        path: mySBOM.json
+    # - name: Upload SBOM CycloneDX JSON for docker image
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: sbom-cyclonedx-json-docker
+    #     path: mySBOM.json
 
-    - name: Snyk scan Docker image (JSON output)
-      continue-on-error: true          
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      run: snyk container test hardened-flask-app:latest --file=Dockerfile --json > snyk-docker.json
+    # - name: Snyk scan Docker image (JSON output)
+    #   continue-on-error: true          
+    #   env:
+    #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    #   run: snyk container test hardened-flask-app:latest --file=Dockerfile --json > snyk-docker.json
 
-    - name: Upload Snyk Docker JSON report
-      uses: actions/upload-artifact@v4
-      with:
-        name: snyk-docker-report-hardened-flask-app
-        path: snyk-docker.json
+    # - name: Upload Snyk Docker JSON report
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: snyk-docker-report-hardened-flask-app
+    #     path: snyk-docker.json

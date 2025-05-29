@@ -1,209 +1,103 @@
-# 🔐 Container Image Hardening Using Alpine Linux
+# ![OWASP VulnerableApp](https://raw.githubusercontent.com/SasanLabs/VulnerableApp/master/docs/logos/Coloured/iconColoured.png) OWASP VulnerableApp
 
-## 📌 1. Definition of Container and Image
+![OWASP Incubator](https://img.shields.io/badge/owasp-incubator-blue.svg) ![](https://img.shields.io/github/v/release/SasanLabs/VulnerableApp?style=flat) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Java CI with Gradle](https://github.com/SasanLabs/VulnerableApp/workflows/Java%20CI%20with%20Gradle/badge.svg) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![Docker Pulls](https://badgen.net/docker/pulls/sasanlabs/owasp-vulnerableapp?icon=docker&label=pulls)](https://hub.docker.com/r/sasanlabs/owasp-vulnerableapp/) [![codecov](https://codecov.io/gh/SasanLabs/VulnerableApp/graph/badge.svg?token=DTS3PA8WXZ)](https://codecov.io/gh/SasanLabs/VulnerableApp)
 
-### ✅ Container
-A **container** is a lightweight, standalone, executable package that includes everything needed to run a piece of software: code, runtime, system tools, libraries, and settings. Containers run consistently across different computing environments using OS-level virtualization.
+As Web Applications are becoming popular these days, there comes a dire need to secure them. Although there are several Vulnerability Scanning Tools, however while developing these tools, developers need to test them. Moreover, they also need to know how well the Vulnerability Scanning tool is performing. As of now, there are little or no such vulnerable applications existing for testing such tools. There are Deliberately Vulnerable Applications existing in the market but they are not written with such an intent and hence lag extensibility, e.g. adding new vulnerabilities is quite difficult. Hence, developers resort to writing their own vulnerable applications, which usually causes productivity loss and the pain of reworking.
 
-### ✅ Image
-An **image** is a read-only template used to create containers. It contains:
-- Base OS layer
-- Application code
-- Libraries and dependencies
-- Configuration files (defined via `Dockerfile`)
+**VulnerableApp** is built keeping these factors in mind. This project is scalable, extensible, easier to integrate and easier to learn.
+As solving the above issue requires addition of various vulnerabilities, hence it becomes a very good platform to learn various security vulnerabilities.
 
----
+### User Interface ###
+![VulnerableApp-facade UI](https://raw.githubusercontent.com/SasanLabs/VulnerableApp-facade/main/docs/images/gif/VulnerableApp-Facade.gif)
 
-## 🔐 2. What is Image Hardening?
+## Technologies used
+- Java8
+- Spring Boot
+- ReactJS
+- Javascript/TypeScript
+    
+## Currently handled Vulnerability types
 
-**Image hardening** is the process of securing container images by minimizing vulnerabilities and reducing the attack surface. This includes:
-- Using minimal base images (e.g., Alpine)
-- Removing unnecessary tools and services
-- Creating non-root users
-- Managing secrets securely
-- Limiting network and filesystem access
-- Enforcing least privilege
-- Enabling image signing (Docker Content Trust)
+1. [JWT Vulnerability](https://github.com/SasanLabs/VulnerableApp/blob/master/src/main/java/org/sasanlabs/service/vulnerability/jwt/)
+2. [Command Injection](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/commandInjection)
+3. [File Upload Vulnerability](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/fileupload)
+4. [Path Traversal Vulnerability](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/pathTraversal)
+5. [SQL Injection](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/sqlInjection)
+    1. [Error Based SQLi](https://github.com/SasanLabs/VulnerableApp/blob/master/src/main/java/org/sasanlabs/service/vulnerability/sqlInjection/ErrorBasedSQLInjectionVulnerability.java)
+    2. [Union Based SQLi](https://github.com/SasanLabs/VulnerableApp/blob/master/src/main/java/org/sasanlabs/service/vulnerability/sqlInjection/UnionBasedSQLInjectionVulnerability.java)
+    3. [Blind SQLi](https://github.com/SasanLabs/VulnerableApp/blob/master/src/main/java/org/sasanlabs/service/vulnerability/sqlInjection/BlindSQLInjectionVulnerability.java)
+6. [XSS](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/xss)
+    1. [Persistent XSS](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/xss/persistent)
+    2. [Reflected XSS](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/xss/reflected)
+7. [XXE](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/xxe)
+8. [Open Redirect](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/urlRedirection)
+    1. [Http 3xx Status code based](https://github.com/SasanLabs/VulnerableApp/blob/master/src/main/java/org/sasanlabs/service/vulnerability/urlRedirection/Http3xxStatusCodeBasedInjection.java)
+9. [SSRF](https://github.com/SasanLabs/VulnerableApp/tree/master/src/main/java/org/sasanlabs/service/vulnerability/ssrf)
 
----
+## Contributing to Project
 
-## ⚙️ 3. Hardening Techniques & Security Impact
+There are multiple ways in which you can contribute to the project:
+1. If you are a developer and trying to start on to the project, then the suggestion is to go through the list of [issues](https://github.com/SasanLabs/VulnerableApp/issues) which contains `good first issue` which can be a good starter.
+2. If you are a developer or a security professional looking to add new Vulnerability type then you can Generate the Sample Vulnerability by running `./gradlew GenerateSampleVulnerability`. It will generate the Sample Vulnerability template which has placeholders and comments. Modified files can be seen in the logs of the command or in the github history. You can navigate to those files, fill in the placeholders and then build the project to see the effect of the changes.
+3. In case you are looking to contribute to the project by publicising it or working on the growth of the project, please feel free to add your thoughts to discussions section or issues and we can discuss over them.
 
-| Category                 | Hardening Technique                     | Security Impact                            |
-| ------------------------ | --------------------------------------- | ------------------------------------------ |
-| **Base Image**           | Use minimal image (e.g., Alpine)        | Smaller footprint, fewer CVEs              |
-| **Packages**             | Install only required packages          | Avoid extra tools that can be exploited    |
-|                          | Remove build-time dependencies          | Reduce surface and image size              |
-| **User**                 | Use non-root user (UID:GID)             | Prevent privilege escalation               |
-| **Layers**               | Minimize Dockerfile layers              | Reduces image complexity                   |
-| **COPY**                 | Use `COPY` instead of `ADD`             | Avoid unintentional tar or remote fetching |
-| **Filesystem**           | Set `read-only` and minimal permissions | Prevent unwanted changes during runtime    |
-| **Secrets**              | Avoid hardcoded secrets                 | Reduce chance of leaks or exposure         |
-| **Network**              | Limit outbound connections              | Minimize exfiltration or malicious access  |
-| **Services**             | Disable unnecessary daemons or cron     | Reduce potential attack vectors            |
-| **Multi-stage build**    | Split build from final runtime          | Keeps only required binaries               |
-| **Lifecycle Management** | Tag, scan, archive, retire images       | Avoid stale or vulnerable images           |
-| **DCT**                  | Docker Content Trust                    | Enables image signing and verification     |
+## Running the project
+There are 2 ways to run the project:
+1. The simplest way to run the project is using Docker containers which will run the full-fleged VulnerableApplication with all the components. For running as Docker application, follow following steps:
+    1. Download and Install [Docker Compose](https://docs.docker.com/compose/install/) 
+    2. Clone this Github repository
+    3. Open the terminal and Navigate to the Project root directory
+    4. Run the command ```docker-compose pull && docker-compose up```
+    5. Navigate to browser and visit `http://localhost` and this will give the User Interface for VulnerableApp.
+    
+    **Note**: The above steps will run the latest unreleased VulnerableApp version. If you want to run the latest released version, please use docker **latest** tag.
+2. Another way to run the VulnerableApp is as standalone Vulnerable Application is:
+    1. Navigate to [Releases Section](https://github.com/SasanLabs/VulnerableApp/releases) in github and download the Jar for the latest released version
+    2. Open the terminal and navigate to the project root directory
+    3. Run the command ```java -jar VulnerableApp-*```
+    4. Navigate to browser and visit `http://localhost:9090/VulnerableApp`. This will give the Legacy User Interface for the VulnerableApp.
 
----
+## Building the project
+There are 2 ways in which this project can be built and used:
+1. As a Docker application which will help in running the full-fledged VulnerableApplication. For running as Docker application, follow following steps:
+    1. Build the docker image by running `./gradlew jibDockerBuild`
+    2. Download [Docker-Compose](https://github.com/SasanLabs/VulnerableApp-facade/blob/main/docker-compose.yml) and run in the same directory `docker-compose up`
+    3. Navigate to browser and visit `http://localhost` and this will give the User Interface for VulnerableApp.
+2. As a SpringBoot application which will run with the Legacy UI or Rest API but gives the benefit of debugging and solving issues. This is the simple way, 
+    1. Import the project into your favorite IDE and run it
+    2. Navigate to browser and visit: `http://localhost:9090/VulnerableApp` and this will give the Legacy User Interface for VulnerableApp which you can use to debug and test.
+    
+### Connecting to embedded H2 database
+For accessing database from browser, visit: `http://localhost:9090/VulnerableApp/h2`
 
-## 🐳 4. Hardened Dockerfile Using Alpine
-
-### 📁 Project Structure
+Database Connection properties:
+```properties
+JDBC Url: jdbc:h2:mem:testdb
+User Name: admin
+Password: hacker
 ```
-hardened-app/
-├── Dockerfile
-├── app.py
-└── requirements.txt
-```
+## Contact
+In case you are stuck with any of the steps or understanding anything related to project and its goals, feel free to shoot a mail at karan.sasan@owasp.org or raise an [issue](https://github.com/SasanLabs/VulnerableApp/issues) and we will try our best to help you.
 
-### 🔐 Dockerfile
+## Documentation and References
 
-```dockerfile
-# ---------- Stage 1: Build ----------
-FROM python:3.12-alpine as builder
+1. [Documentation](https://sasanlabs.github.io/VulnerableApp)
+2. [Design Documentation](https://sasanlabs.github.io/VulnerableApp/DesignDocumentation.html)
+3. [Owasp VulnerableApp](https://owasp.org/www-project-vulnerableapp/)
+4. [Overview video for OWASP Spotlight series](https://www.youtube.com/watch?v=HRRTrnRgMjs)
+5. [Overview Video](https://www.youtube.com/watch?v=AjL4B-WwrrA&ab_channel=OwaspVulnerableApp)
 
-WORKDIR /app
+### Blogs
+1. [Overview of Owasp-VulnerableApp - Medium article](https://hussaina-begum.medium.com/an-extensible-vulnerable-application-for-testing-the-vulnerability-scanning-tools-cc98f0d94dbc)
+2. [Overview of Owasp-VulnerableApp - Blogspot post](https://hussaina-begum.blogspot.com/2020/10/an-extensible-vulnerable-application.html)
+3. [Introduction to Owasp VulnerableApp by Kenji Nakajima](https://jpn.nec.com/cybersecurity/blog/220520/index.html)
 
-# Install build dependencies only temporarily
-RUN apk add --no-cache build-base libffi-dev
+### Troubleshooting references
+1. [Reddit exploiting SQL Injection Vulnerability](https://www.reddit.com/r/hacking/comments/11wtf17/owasp_vulnerableappfacade_sql_injection/)
 
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+### Readme in other languages
 
-# ---------- Stage 2: Runtime ----------
-FROM python:3.12-alpine
-
-LABEL maintainer="you@example.com"
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-WORKDIR /app
-COPY --from=builder /root/.local /home/appuser/.local
-COPY --chown=appuser:appgroup app.py .
-
-# Secure permissions
-RUN chmod -R 755 /app
-
-USER appuser
-EXPOSE 5000
-
-# Read-only filesystem (add in runtime flags)
-VOLUME ["/tmp"]
-
-CMD ["python", "app.py"]
-```
-
-### 📦 requirements.txt
-
-```
-Flask==3.0.0
-```
-
-### ⚙️ app.py
-
-```python
-from flask import Flask
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Secure Hardened Flask App Running!"
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-```
-
----
-
-## 🧪 5. Run the Hardened App
-
-### 🔨 Build the Image
-
-```bash
-docker build -t hardened-flask-app .
-```
-
-### 🚀 Run Securely
-
-```bash
-docker run --rm \
-  --read-only \
-  --cap-drop=ALL \
-  -p 5000:5000 \
-  hardened-flask-app
-```
-
----
-
-## 🆚 6. Alpine vs Ubuntu Comparison
-
-| Feature         | Alpine                               | Ubuntu                                |
-| --------------- | ------------------------------------ | ------------------------------------- |
-| Size            | ~5MB                                 | ~29MB (slim) or larger                |
-| Package Manager | `apk`                                | `apt`                                 |
-| libc            | `musl`                               | `glibc`                               |
-| Performance     | Fast and lightweight                 | Heavier but more compatible           |
-| CVE Exposure    | Very low                             | Moderate                              |
-| Use Cases       | Microservices, production-ready apps | Development environments, legacy apps |
-
----
-
-## 📊 7. Comparative Analysis of Minimal Base Images
-
-| Base        | Size   | Attack Surface | Compatibility    | Use Case                         |
-| ----------- | ------ | -------------- | ---------------- | -------------------------------- |
-| Alpine      | ~5MB   | Minimal        | Some limitations | Security-focused apps            |
-| Ubuntu Slim | ~29MB  | Moderate       | High             | General use                      |
-| Debian Slim | ~22MB  | Low            | High             | Stable production                |
-| Distroless  | ~10MB  | Minimal        | Limited          | High security, minimal footprint |
-
----
-
-## 🔐 8. Implementing Docker Content Trust (DCT)
-
-### ✅ What is Docker Content Trust?
-
-Docker Content Trust (DCT) ensures that only signed container images are pulled, providing:
-- Image authenticity
-- Publisher integrity
-- Secure supply chain
-
-### 🔧 Enable DCT
-
-```bash
-export DOCKER_CONTENT_TRUST=1
-docker pull alpine
-```
-
----
-
-## 🔄 9. Image Lifecycle Management
-
-### ✅ Why?
-
-Unmaintained images can:
-- Contain critical CVEs
-- Break compliance
-- Increase attack vectors
-
-### 🔁 Methodology
-
-- Tagging: Use v1, v2.1, latest, stable
-- Scanning: Automate using Trivy, Snyk, or Docker Scout
-- Retention: Clean old images via policy
-- Signing: Use DCT or Cosign
-- Audit Logging: Track changes and usage
-
----
-
-## ✅ 10. Summary
-
-- Use minimal base images (Alpine, Distroless) to reduce attack surface
-- Apply best practices: non-root users, secure permissions, multi-stage builds
-- Enable Docker Content Trust for integrity verification
-- Perform lifecycle management to avoid stale images
-- Hardened images ensure safer deployment pipelines in modern DevOps workflows
+1. [Russian](https://github.com/SasanLabs/VulnerableApp/tree/master/docs/i18n/ru/README.md)
+2. [Chinese](https://github.com/SasanLabs/VulnerableApp/tree/master/docs/i18n/zh-CN/README.md)
+3. [Hindi](https://github.com/SasanLabs/VulnerableApp/tree/master/docs/i18n/hi/README.md)
+4. [Punjabi](https://github.com/SasanLabs/VulnerableApp/tree/master/docs/i18n/pa/README.md)
