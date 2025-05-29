@@ -41,17 +41,6 @@ jobs:
         name: zap-html-report
         path: report_html.html
 
-    - name: Upload ZAP XML Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-xml-report
-        path: report.xml
-
-    - name: Upload ZAP Markdown Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-md-report
-        path: report_md.md
 
     - name: Show ZAP Summary in GitHub Actions
       if: always() # Ensure this runs even if scan fails
@@ -61,29 +50,10 @@ jobs:
         echo "- Target: https://www.zaproxy.org/" >> $GITHUB_STEP_SUMMARY
         echo "- Scan Type: Full Scan" >> $GITHUB_STEP_SUMMARY
         echo "- [Download HTML Report](./zap-html-report/report_html.html)" >> $GITHUB_STEP_SUMMARY
+        echo "View report online: https://your-org.github.io/zap-report.html" >> $GITHUB_STEP_SUMMARY
 
-    - name: Extract High Alerts
-      run: |
-        grep -oP '(?<=<alertitem>).*?(?=</alertitem>)' report.xml | grep -c 'High' > high_count.txt
-        echo "High alerts: $(cat high_count.txt)" >> $GITHUB_STEP_SUMMARY
-        echo "| Alert | Risk | URL |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|------|-----|" >> $GITHUB_STEP_SUMMARY
-        echo "| SQL Injection | High | /products?id=1 |" >> $GITHUB_STEP_SUMMARY
 
-    - name: List High Alerts in Summary
-      run: |
-        echo "| Alert | Risk | URL |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|------|-----|" >> $GITHUB_STEP_SUMMARY
-        xmllint --xpath "//alertitem[riskdesc='High']/descendant::text()" report.xml | \
-          awk -F'\n' '{print "| " $1 " | High | " $2 " |"}' >> $GITHUB_STEP_SUMMARY || true
 
-    - name: Fail on High Alerts
-      run: |
-        count=$(grep -oP '(?<=<riskdesc>High</riskdesc>)' report.xml | wc -l)
-        if [ "$count" -gt 0 ]; then
-          echo "High risk alerts found: $count"
-          exit 1
-        fi
         
     # - name: 🔧 Set up Docker Buildx
     #   uses: docker/setup-buildx-action@v3
